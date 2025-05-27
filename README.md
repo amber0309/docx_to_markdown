@@ -13,6 +13,6 @@ pip -r requirements.txt
 
  parse a docx file into Markdown
 ```python
-from src.api_docx2md import docx_to_markdown
+from src.api import docx_to_markdown
 markdown_text = docx_to_markdown('mydoc.docx', './')
 ```
