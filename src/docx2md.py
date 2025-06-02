@@ -1,5 +1,6 @@
 import os
-import tempfile
+# import tempfile
+# import subprocess
 from io import BytesIO
 
 from docx import Document
@@ -18,14 +19,14 @@ class Docx2MdConverter:
     def __init__(self, path_input_file, path_output=None, vlm=None):
         self.path_input = path_input_file
         self.image_counter = 0
+        file_name = os.path.basename(os.path.realpath(path_input_file)).split('.')[0]
 
         if path_output is None:
             self.output_file = None
-            self.path_images = './images'
+            self.path_images = f'./images_{file_name}'
         else:
-            file_name = os.path.basename(os.path.realpath(path_input_file))
-            self.output_file = os.path.join(path_output, file_name.split('.')[0] + '.md')
-            self.path_images = os.path.join(path_output, 'images')
+            self.output_file = os.path.join(path_output, file_name + '.md')
+            self.path_images = os.path.join(path_output, f'images_{file_name}')
         os.makedirs(self.path_images, exist_ok=True)
 
         self.ns = {
@@ -69,13 +70,17 @@ class Docx2MdConverter:
     def _get_vlm(self, model_name):
         model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
                 model_name, 
-                torch_dtype='auto', 
-                device_map="balanced_low_0"
+                torch_dtype=torch.bfloat16, 
+                device_map="balanced_low_0",
+                attn_implementation="flash_attention_2"
                 )
         processor = AutoProcessor.from_pretrained(model_name)
         return model, processor
 
     def _get_image_description(self, path_image):
+        if not os.path.exists(path_image):
+            return 'None'
+
         messages = [
         {
             "role": "user",
@@ -200,7 +205,7 @@ class Docx2MdConverter:
                 desc = self._get_image_description(os.path.join(self.path_images, os.path.basename(relpath)))
             else:
                 desc = 'None'
-            items.append(('image', (relpath, desc)))
+            items.append(('image', ('img', desc)))
 
         # VML
         for vimg in el.findall('.//v:imagedata', self.ns):
@@ -215,7 +220,7 @@ class Docx2MdConverter:
                 desc = self._get_image_description(os.path.join(self.path_images, os.path.basename(relpath)))
             else:
                 desc = 'None'
-            items.append(('image', (relpath, desc)))
+            items.append(('image', ('img', desc)))
 
         # plain text
         txt = run.text or ""
@@ -262,27 +267,27 @@ class Docx2MdConverter:
         把 EMF/WMF blob 写入临时文件，再用 soffice 转成 PNG。
         返回转换后 PNG 的相对路径（相对于 Markdown）。
         """
-        with tempfile.TemporaryDirectory() as td:
-            # 1) write to vector file
-            vec_path = os.path.join(td, f"img.{ext}")
-            with open(vec_path, "wb") as f:
-                f.write(blob)
-            
-            # 2) convert to png file
-            png_src = os.path.join(td, "img.png")
-            im = Image.open(vec_path)
-            im.save(os.path.join(td, "img.png"))
-            if not os.path.exists(png_src):
-                raise RuntimeError("转 EMF→PNG 失败，没有生成 img.png")
+        # 1) write to vector file
+        fname = f"img_{self.image_counter}.{ext}"
+        vec_path = os.path.join(self.path_images, fname)
+        with open(vec_path, "wb") as f:
+            f.write(blob)
 
-            # 3) move to the output path
-            fname = f"image_{self.image_counter}.png"
-            dst = os.path.join(self.path_images, fname)
-            os.replace(png_src, dst)
-            self.image_counter += 1
+        # try:
+        #     # ----- 调用 inkscape 转换
+        #     png_src = os.path.join(self.path_images, f"image_{self.image_counter}.png")
+        #     cmd = [
+        #         os.path.expanduser("/scratch/ywxzml3j/user17/software/inkscape/Inkscape-ebf0e94-x86_64.AppImage"),
+        #         "--export-type=png",
+        #         "--export-filename=" + png_src,
+        #         vec_path
+        #     ]
+        #     subprocess.run(cmd, check=True, stderr=subprocess.DEVNULL, timeout=30)
+        # except:
+        #     print(f'[ERROR]: img_{self.image_counter}.{ext} conversion failed!')
 
-            #  return path relative to the Markdown file
-            return os.path.join(os.path.basename(self.path_images), fname)
+        self.image_counter += 1
+        return os.path.join(os.path.basename(self.path_images), fname)
 
     # ----- text and table
     def _parse_heading_level(self, style_name: str) -> int:
