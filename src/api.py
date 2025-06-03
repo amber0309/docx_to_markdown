@@ -8,11 +8,11 @@ def docx_to_markdown(file_docx, path_output=None, vlm=None):
     file_docx: str
         the path of input docx file
     path_output: str, optional
-        - if None, save converted Markdown file in path_output
-        - if not None, no file would be saved
+        - if None, no file would be saved
+        - if not None, save converted Markdown file in path_output
     vlm: str, optional
-        - if None, image info not processed
-        - if not None, use specified model to generate image caption
+        - if None, images will be replaced by placeholder ![('img', 'None')]()
+        - if not None, use specified model to generate image description
 
     Returns
     ----------
