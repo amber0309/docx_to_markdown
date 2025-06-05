@@ -8,10 +8,15 @@ from docx.table import Table as _Table
 from docx.oxml.ns import qn
 from docx.text.paragraph import Paragraph
 
-from PIL import Image
-from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor
-from qwen_vl_utils import process_vision_info
-import torch
+try:
+    import torch
+    from PIL import Image
+    from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor
+    from qwen_vl_utils import process_vision_info
+    HAS_IMG_DEPS = True
+except ImportError:
+    print('[Warning] One of packages in (torch, pillow, transformers, qwen_vl_utils) missing. Images will not be parsed into text')
+    HAS_IMG_DEPS = False
 
 
 class Docx2MdConverter:
@@ -37,7 +42,7 @@ class Docx2MdConverter:
             'v': 'urn:schemas-microsoft-com:vml',
         }
 
-        if vlm is not None and torch.cuda.is_available():
+        if vlm is not None and torch.cuda.is_available() and HAS_IMG_DEPS:
             self.model, self.processor = self._get_vlm(vlm)
         else:
             self.model, self.processor = None, None
