@@ -1,21 +1,20 @@
 import os
-# import tempfile
-# import subprocess
+import sys
 from io import BytesIO
 
 from docx import Document
 from docx.table import Table as _Table
 from docx.oxml.ns import qn
 from docx.text.paragraph import Paragraph
+from PIL import Image
 
 try:
     import torch
-    from PIL import Image
     from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor
     from qwen_vl_utils import process_vision_info
     HAS_IMG_DEPS = True
 except ImportError:
-    print('[Warning] One of packages in (torch, pillow, transformers, qwen_vl_utils) missing. Images will not be parsed into text')
+    # print('[Warning] One of packages in (torch, transformers, qwen_vl_utils) missing. Images will not be parsed into text')
     HAS_IMG_DEPS = False
 
 
@@ -269,27 +268,23 @@ class Docx2MdConverter:
 
     def _convert_vector_to_png(self, blob: bytes, ext: str) -> str:
         """
-        把 EMF/WMF blob 写入临时文件，再用 soffice 转成 PNG。
-        返回转换后 PNG 的相对路径（相对于 Markdown）。
-        """
-        # 1) write to vector file
-        fname = f"img_{self.image_counter}.{ext}"
-        vec_path = os.path.join(self.path_images, fname)
-        with open(vec_path, "wb") as f:
-            f.write(blob)
+        if os is Windows: convert EMF/WMF blob to png and save
+        else: save in the original format
 
-        # try:
-        #     # ----- 调用 inkscape 转换
-        #     png_src = os.path.join(self.path_images, f"image_{self.image_counter}.png")
-        #     cmd = [
-        #         os.path.expanduser("/scratch/ywxzml3j/user17/software/inkscape/Inkscape-ebf0e94-x86_64.AppImage"),
-        #         "--export-type=png",
-        #         "--export-filename=" + png_src,
-        #         vec_path
-        #     ]
-        #     subprocess.run(cmd, check=True, stderr=subprocess.DEVNULL, timeout=30)
-        # except:
-        #     print(f'[ERROR]: img_{self.image_counter}.{ext} conversion failed!')
+        return: path of image relative to Markdown file
+        """
+        if sys.platform.startswith('win'):
+            # on Windows os
+            fname = f"img_{self.image_counter}.png"
+            png_path = os.path.join(self.path_images, fname)
+            image = Image.open(BytesIO(blob))
+            image.save(png_path, format='PNG')
+        else:
+            # on other os
+            fname = f"img_{self.image_counter}.{ext}"
+            vec_path = os.path.join(self.path_images, fname)
+            with open(vec_path, "wb") as f:
+                f.write(blob)
 
         self.image_counter += 1
         return os.path.join(os.path.basename(self.path_images), fname)
