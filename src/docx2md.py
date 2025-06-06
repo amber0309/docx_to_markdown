@@ -247,7 +247,7 @@ class Docx2MdConverter:
             ext = "emf" if "emf" in content_type else "wmf"
             return self._convert_vector_to_png(blob, ext)
 
-        fname = f"image_{self.image_counter}.png"
+        fname = f"img_{self.image_counter}.png"
         dst = os.path.join(self.path_images, fname)
         img = Image.open(BytesIO(blob))
         # 如果有 alpha 或者 P 模式的透明度信息，就把它当做 mask 贴到白底上
