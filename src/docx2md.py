@@ -205,11 +205,12 @@ class Docx2MdConverter:
             part = doc.part.related_parts[rid]
             blob = part.blob
             relpath = self._save_blob_as_png(blob, part.content_type)
+            img_name = os.path.basename(relpath)
             if self.model is not None:
-                desc = self._get_image_description(os.path.join(self.path_images, os.path.basename(relpath)))
+                desc = self._get_image_description(os.path.join(self.path_images, img_name))
             else:
-                desc = 'None'
-            items.append(('image', ('img', desc)))
+                desc = '{{None}}'
+            items.append(('image', f'({img_name}, {desc})'))
 
         # VML
         for vimg in el.findall('.//v:imagedata', self.ns):
@@ -220,11 +221,12 @@ class Docx2MdConverter:
             part = doc.part.related_parts[rid]
             blob = part.blob
             relpath = self._save_blob_as_png(blob, part.content_type)
+            img_name = os.path.basename(relpath)
             if self.model is not None:
-                desc = self._get_image_description(os.path.join(self.path_images, os.path.basename(relpath)))
+                desc = self._get_image_description(os.path.join(self.path_images, img_name))
             else:
-                desc = 'None'
-            items.append(('image', ('img', desc)))
+                desc = '{{None}}'
+            items.append(('image', f'({img_name}, {desc})'))
 
         # plain text
         txt = run.text or ""
