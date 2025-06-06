@@ -209,7 +209,7 @@ class Docx2MdConverter:
             if self.model is not None:
                 desc = self._get_image_description(os.path.join(self.path_images, img_name))
             else:
-                desc = '{{None}}'
+                desc = '{{NONE}}'
             items.append(('image', f'({img_name}, {desc})'))
 
         # VML
@@ -225,7 +225,7 @@ class Docx2MdConverter:
             if self.model is not None:
                 desc = self._get_image_description(os.path.join(self.path_images, img_name))
             else:
-                desc = '{{None}}'
+                desc = '{{NONE}}'
             items.append(('image', f'({img_name}, {desc})'))
 
         # plain text
