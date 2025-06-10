@@ -1,5 +1,10 @@
 from src.docx2md import Docx2MdConverter
-from src.img2text import add_img_info
+try:
+    from src.img2text import add_img_info
+except ImportError:
+    print(
+        '[Warning] One of packages in (torch, transformers, qwen_vl_utils) missing. Images info generation not available')
+
 
 def docx_to_markdown(
     file_docx: str, 
