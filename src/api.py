@@ -3,7 +3,8 @@ try:
     from src.img2text import add_img_info
 except ImportError:
     print(
-        '[Warning] One of packages in (torch, transformers, qwen_vl_utils) missing. Images info generation not available')
+        '[Warning] One of packages in (torch, transformers, qwen_vl_utils, flash-attn) missing. '
+        'Images info generation not available')
 
 
 def docx_to_markdown(
