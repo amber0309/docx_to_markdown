@@ -8,6 +8,8 @@ from docx.oxml.ns import qn
 from docx.text.paragraph import Paragraph
 from PIL import Image
 
+from src.utils import extract_headings_via_word_automation
+
 try:
     import torch
     from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor
@@ -40,6 +42,8 @@ class Docx2MdConverter:
             'r': 'http://schemas.openxmlformats.org/officeDocument/2006/relationships',
             'v': 'urn:schemas-microsoft-com:vml',
         }
+
+        self.headings, self.heading_cnt = extract_headings_via_word_automation(path_input_file)
 
         if vlm is not None and torch.cuda.is_available() and HAS_IMG_DEPS:
             self.model, self.processor = self._get_vlm(vlm)
@@ -139,9 +143,15 @@ class Docx2MdConverter:
             # Heading
             if level > 0:
                 text = para.text.strip()
-                if text:
-                    md_lines.append(f"{'#' * level} {text}")
+                _heading = self.headings[self.heading_cnt]
+                if text and text in _heading:
+                    md_lines.append(f"{'#' * level} {_heading}")
                     md_lines.append("")
+                    self.heading_cnt += 1
+                else:
+                    print('text', text)
+                    print('heading', _heading)
+                    print()
                 return
             # 正文
             items = self._extract_paragraph_items(para, doc)
