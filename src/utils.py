@@ -1,6 +1,5 @@
 import os
-
-import win32com.client as win32
+import sys
 
 
 def contains_chinese_characters(s):
@@ -31,10 +30,14 @@ def extract_headings_via_word_automation(doc_path):
     headings = []
     heading_cnt = 0
 
+    if not sys.platform.startswith('win'):
+        return  headings, heading_cnt
+
     # The path must be absolute for Word automation to work reliably
     abs_doc_path = os.path.abspath(doc_path)
 
     try:
+        import win32com.client as win32
         print("--- Extracting headings using MS Word Automation ---")
         # Start the Word application
         word = win32.gencache.EnsureDispatch('Word.Application')

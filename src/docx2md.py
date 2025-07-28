@@ -143,16 +143,22 @@ class Docx2MdConverter:
             # Heading
             if level > 0:
                 text = para.text.strip()
-                _heading = self.headings[self.heading_cnt]
-                if text and text in _heading:
-                    md_lines.append(f"{'#' * level} {_heading}")
-                    md_lines.append("")
-                    self.heading_cnt += 1
+                if self.heading_cnt >= 0 and self.heading_cnt < len(self.headings):
+                    _heading = self.headings[self.heading_cnt]
+                    if text and text in _heading:
+                        md_lines.append(f"{'#' * level} {_heading}")
+                        md_lines.append("")
+                        self.heading_cnt += 1
+                    else:
+                        print('text', text)
+                        print('heading', _heading)
+                        print()
+                    return
                 else:
-                    print('text', text)
-                    print('heading', _heading)
-                    print()
-                return
+                    md_lines.append(f"{'#' * level} {text}")
+                    md_lines.append("")
+                    return
+
             # 正文
             items = self._extract_paragraph_items(para, doc)
             buf = ""
